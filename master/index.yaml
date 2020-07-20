@@ -1,0 +1,61 @@
+apiVersion: v1
+entries:
+  addons:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: "2020-07-19T20:41:39.647604087-07:00"
+    dependencies:
+    - condition: traefik.enabled
+      name: traefik
+      repository: https://kubernetes-charts.storage.googleapis.com
+      version: 1.77.1
+    - condition: aws-alb-ingress-controller.enabled
+      name: aws-alb-ingress-controller
+      repository: https://kubernetes-charts-incubator.storage.googleapis.com/
+      version: 0.1.10
+    - condition: elasticsearch.enabled
+      name: elasticsearch
+      repository: https://kubernetes-charts.storage.googleapis.com/
+      version: 1.15.1
+    - condition: fluentd-elasticsearch.enabled
+      name: fluentd-elasticsearch
+      repository: https://kubernetes-charts.storage.googleapis.com/
+      version: 1.5.0
+    - condition: kibana.enabled
+      name: kibana
+      repository: https://kubernetes-charts.storage.googleapis.com/
+      version: 1.1.0
+    - condition: metrics-server.enabled
+      name: metrics-server
+      repository: https://kubernetes-charts.storage.googleapis.com/
+      version: 2.8.4
+    - condition: ingress-azure.enabled
+      name: ingress-azure
+      repository: https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
+      version: 1.0.0
+    description: A Helm chart for Kubernetes
+    digest: 60f1f1f98039f082f75a0a363df3d68cb3af2bda6d0d5e17558adc696c303c48
+    name: addons
+    urls:
+    - https://timlaipega.github.io/pega-helm-charts/master/addons-1.2.0.tgz
+    version: 1.2.0
+  pega:
+  - apiVersion: v1
+    created: "2020-07-19T20:41:39.655235397-07:00"
+    dependencies:
+    - condition: cassandra.enabled
+      name: cassandra
+      repository: https://kubernetes-charts-incubator.storage.googleapis.com/
+      version: 0.13.3
+    description: Pega installation on kubernetes
+    digest: 85cc98cfd0a6e5b03b19974e718e31e64556333c8c4188a9433a62b30e347cc0
+    home: http://www.pega.com
+    keywords:
+    - pega
+    - prpc
+    - kubernetes
+    name: pega
+    urls:
+    - https://timlaipega.github.io/pega-helm-charts/master/pega-1.2.0.tgz
+    version: 1.2.0
+generated: "2020-07-19T20:41:39.633995986-07:00"
