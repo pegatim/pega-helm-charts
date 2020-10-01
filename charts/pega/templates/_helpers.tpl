@@ -164,6 +164,19 @@ until cqlsh -u {{ $cassandraUser | quote }} -p {{ $cassandraPassword | quote }} 
   {{- add $passivationTime $passivationDelay -}}
 {{- end -}}
 
+# Determine application root context to use in pega tomcat nodes
+{{- define "pega.applicationContextPath" -}}
+   {{- if .node.ingress -}}
+      {{- if .node.ingress.appContextPath -}}
+         {{ trimAll "/" .node.ingress.appContextPath }}
+      {{- else -}}
+         prweb
+      {{- end -}}	 
+   {{- else -}}
+      prweb
+   {{- end -}}
+{{- end }}
+
 {{- define "gkemanagedcertificate" }}
 apiVersion: networking.gke.io/v1beta1
 kind: ManagedCertificate
@@ -201,3 +214,17 @@ true
 {{- end }}
 {{- end }}
 {{- end }}
+
+#Override this template to generate additional pod annotations that are dynamically composed during helm deployment (do not indent annotations)
+{{- define "generatedPodAnnotations" }}
+{{- end }}
+
+#Override this template in a subchart if your secret values are provided by seperate secrets
+{{- define "pegaCredentialVolumeTemplate" }}
+- name: {{ template "pegaVolumeCredentials" }}
+  secret:
+    # This name will be referred in the volume mounts kind.
+    secretName: {{ template "pegaCredentialsSecret" }}
+    # Used to specify permissions on files within the volume.
+    defaultMode: 420
+{{- end}}

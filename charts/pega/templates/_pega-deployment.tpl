@@ -34,6 +34,7 @@ spec:
 {{- end }}
         config-check: {{ include (print .root.Template.BasePath "/pega-environment-config.yaml") .root | sha256sum }}
         revision: "{{ .root.Release.Revision }}"
+{{- include "generatedPodAnnotations" .root | indent 8 }}
 
     spec:
       volumes:
@@ -44,12 +45,7 @@ spec:
           name: {{ .name }}
           # Used to specify permissions on files within the volume.
           defaultMode: 420
-      - name: {{ template "pegaVolumeCredentials" }}
-        secret:
-          # This name will be referred in the volume mounts kind.
-          secretName: {{ template "pegaCredentialsSecret" }}
-          # Used to specify permissions on files within the volume.
-          defaultMode: 420
+{{- include "pegaCredentialVolumeTemplate" . | indent 6 }}
 {{- if .custom }}
 {{- if .custom.volumes }}
       # Additional custom volumes
@@ -90,13 +86,19 @@ spec:
 {{- end }}
 {{- end }}
         # Specify any of the container environment variables here
-        env:
+        env:	
         # Node type of the Pega nodes for {{ .name }}
         - name: NODE_TYPE
           value: {{ .nodeType }}
+        - name: PEGA_APP_CONTEXT_PATH
+          value: {{ template "pega.applicationContextPath" . }}
 {{- if .node.requestor }}
         - name: REQUESTOR_PASSIVATION_TIMEOUT
           value: "{{ .node.requestor.passivationTimeSec }}"
+{{- end }}
+{{- if and .root.Values.constellation (eq .root.Values.constellation.enabled true) }}
+        - name: COSMOS_SETTINGS
+          value: "Pega-UIEngine/cosmosservicesURI=/c11n"
 {{- end }}
 {{- if .custom }}
 {{- if .custom.env }}
@@ -156,7 +158,7 @@ spec:
         {{- $livenessProbe := .node.livenessProbe }}
         livenessProbe:
           httpGet:
-            path: "/prweb/PRRestService/monitor/pingService/ping"
+            path: "/{{ template "pega.applicationContextPath" . }}/PRRestService/monitor/pingService/ping"
             port: 8080
             scheme: HTTP
           initialDelaySeconds: {{ $livenessProbe.initialDelaySeconds | default 300 }}
@@ -168,7 +170,7 @@ spec:
         {{- $readinessProbe := .node.readinessProbe }}
         readinessProbe:
           httpGet:
-            path: "/prweb/PRRestService/monitor/pingService/ping"
+            path: "/{{ template "pega.applicationContextPath" . }}/PRRestService/monitor/pingService/ping"
             port: 8080
             scheme: HTTP
           initialDelaySeconds: {{ $readinessProbe.initialDelaySeconds | default 300 }}
