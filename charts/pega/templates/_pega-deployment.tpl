@@ -44,7 +44,7 @@ spec:
           # This name will be referred in the volume mounts kind.
           name: {{ .name }}
           # Used to specify permissions on files within the volume.
-          defaultMode: 420
+          defaultMode: 0540
 {{- include "pegaCredentialVolumeTemplate" . | indent 6 }}
 {{- if .custom }}
 {{- if .custom.volumes }}
@@ -72,6 +72,9 @@ spec:
         # The pega image, you may use the official pega distribution or you may extend
         # and host it yourself.  See the image documentation for more information.
         image: {{ .root.Values.global.docker.pega.image }}
+        command: ['/opt/pega/config/custom_docker_entrypoint.sh']
+        args: ['su', '-c', '/usr/local/tomcat/bin/catalina.sh run', 'tomcat']
+
 {{- if (.root.Values.global.docker.pega.imagePullPolicy) }}
         imagePullPolicy: {{ .root.Values.global.docker.pega.imagePullPolicy }}
 {{- end }}
