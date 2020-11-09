@@ -5,8 +5,8 @@ apiVersion: batch/v1
 metadata:
   name: {{ .name }}
   namespace: {{ .root.Release.Namespace }}
-{{- if and .root.Values.waitForJobCompletion (or (eq .root.Values.global.actions.execute "install") (eq .root.Values.global.actions.execute "upgrade")) }}
   annotations:
+{{- if and .root.Values.waitForJobCompletion (or (eq .root.Values.global.actions.execute "install") (eq .root.Values.global.actions.execute "upgrade")) }}
     # Forces Helm to wait for the install or upgrade to complete.
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "0"
@@ -15,6 +15,11 @@ metadata:
 spec:
   backoffLimit: 0
   template:
+    metadata:
+      annotations:
+{{- if .root.Values.podAnnotations}}
+{{ toYaml .root.Values.podAnnotations | indent 8 }}
+{{- end }}     
     spec:
       volumes:
 {{- if and .root.Values.distributionKitVolumeClaimName (not .root.Values.distributionKitURL) }}
