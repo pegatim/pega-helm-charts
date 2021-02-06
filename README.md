@@ -2,4 +2,4 @@
 
 Parallel with Pega-Helm-Charts master.
 
-https://timlaipega.github.io/pega-helm-charts/
+https://pegatim.github.io/pega-helm-charts/
