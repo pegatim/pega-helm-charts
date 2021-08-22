@@ -6,12 +6,21 @@ metadata:
   name: {{ .name }}
   namespace: {{ .root.Release.Namespace }}
   annotations:
-{{- if and .root.Values.waitForJobCompletion (or (eq .root.Values.global.actions.execute "install") (eq .root.Values.global.actions.execute "upgrade")) }}
-    # Forces Helm to wait for the install or upgrade to complete.
-    "helm.sh/hook": post-install
+{{- if  (eq .root.Values.waitForJobCompletion "true")   }}
     "helm.sh/hook-weight": "0"
-    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-delete-policy": {{ if .root.Values.cleanAfterInstall -}} before-hook-creation,hook-succeeded {{- else -}} before-hook-creation {{- end }}
+{{- if  (eq .root.Values.global.actions.execute "install") }}
+    # Forces Helm to wait for the install to complete.
+    "helm.sh/hook": post-install
 {{- end }}
+{{- if (eq .root.Values.global.actions.execute "upgrade") }}
+    # Forces Helm to wait for the upgrade to complete.
+    "helm.sh/hook": post-install, post-upgrade
+{{- end }}
+{{- end }}
+{{- if .root.Values.global.pegaJob }}{{- if .root.Values.global.pegaJob.annotations }}
+{{ toYaml .root.Values.global.pegaJob.annotations | indent 4 }}
+{{- end }}{{- end }}
 spec:
   backoffLimit: 0
   template:
@@ -27,11 +36,15 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .root.Values.distributionKitVolumeClaimName }}
 {{- end }}      
-{{- include "pegaCredentialVolumeTemplate" . | indent 6 }}
+{{- include "pegaCredentialVolumeTemplate" .root | indent 6 }}
       - name: {{ template "pegaVolumeInstall" }}
         configMap:
           # This name will be referred in the volume mounts kind.
+     {{- if or (eq $arg "install") (eq $arg "install-deploy") }}
           name: {{ template "pegaInstallConfig"}}
+     {{- else }}
+          name: {{ template "pegaUpgradeConfig"}}
+     {{- end }}
           # Used to specify permissions on files within the volume.
           defaultMode: 420          
       initContainers:
@@ -76,6 +89,6 @@ spec:
 {{- end }}           
       restartPolicy: Never
       imagePullSecrets:
-      - name: {{ template "pegaRegistrySecret" }}
+      - name: {{ template "pegaRegistrySecret" .root }}
 ---
 {{- end -}}
