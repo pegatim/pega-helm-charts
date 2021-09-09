@@ -1,0 +1,3 @@
+[submodule "jbosseap"]
+	path = jbosseap
+	url = git@github.com:pegatim/pega-helm-charts
