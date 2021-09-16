@@ -29,9 +29,9 @@ metadata:
   {{ end }}
 {{- end }}
 spec:
-  # Assign loadBalancerIP if specified
   {{- if .node.service.loadBalancerIP }}
-  loadBalancerIP: {{ .node.service.loadBalancer }}
+  # Assign loadBalancerIP if specified
+  loadBalancerIP: {{ .node.service.loadBalancerIP }}
   {{ end }}
   type:
   {{- if or (eq .root.Values.global.provider "gke") (eq .root.Values.global.provider "eks") -}}
