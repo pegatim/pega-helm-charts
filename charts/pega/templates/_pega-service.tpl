@@ -29,16 +29,17 @@ metadata:
   {{ end }}
 {{- end }}
 spec:
-{{- if .node.service.loadBalancerIP }}
-  # Assign loadBalancerIP if specified
-  loadBalancerIP: {{ .node.service.loadBalancerIP }}
-{{ end }}
   type:
   {{- if or (eq .root.Values.global.provider "gke") (eq .root.Values.global.provider "eks") -}}
   {{ indent 1 "NodePort" }}
   {{- else -}}
   {{ indent 1 (.node.service.serviceType | default "LoadBalancer") }}
   {{- end }}
+  {{- if .node.service.externalIPs }}
+  # Assign externalIPs
+  externalIPs:
+  - {{ .node.service.externalIPs: }}
+  {{ end }}
   # Specification of on which port the service is enabled
   ports:
   - name: http
