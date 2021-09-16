@@ -38,7 +38,7 @@ spec:
   {{- if .node.service.externalIPs }}
   # Assign externalIPs
   externalIPs:
-  - {{ .node.service.externalIPs: }}
+  - {{ .node.service.externalIPs }}
   {{ end }}
   # Specification of on which port the service is enabled
   ports:
