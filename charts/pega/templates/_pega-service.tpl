@@ -42,7 +42,7 @@ spec:
   {{ end }}
   # Specification of on which port the service is enabled
   ports:
-  - name: http
+  - name:  {{ (.node.service.scheme | default "http") }}
     port: {{ .node.service.port }}
     targetPort: {{ .node.service.targetPort }}
   selector:

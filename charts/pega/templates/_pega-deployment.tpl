@@ -99,7 +99,7 @@ spec:
 {{- end }}
         # Pod (app instance) listens on this port
         ports:
-        - containerPort: 8080
+        - containerPort: {{ .node.service.targetPort }}
           name: pega-web-port
 {{- if .custom }}
 {{- if .custom.ports }}
@@ -190,7 +190,7 @@ spec:
           httpGet:
             path: "/{{ template "pega.applicationContextPath" . }}/PRRestService/monitor/pingService/ping"
             port: {{ $livenessProbe.port | default 8080 }}
-            scheme: HTTP
+            scheme: $livenessProbe.scheme
           initialDelaySeconds: {{ $livenessProbe.initialDelaySeconds | default 0 }}
           timeoutSeconds: {{ $livenessProbe.timeoutSeconds | default 20 }}
           periodSeconds: {{ $livenessProbe.periodSeconds | default 30 }}
@@ -202,7 +202,7 @@ spec:
           httpGet:
             path: "/{{ template "pega.applicationContextPath" . }}/PRRestService/monitor/pingService/ping"
             port: {{ $readinessProbe.port | default 8080 }}
-            scheme: HTTP
+            scheme: $readinessProbe.scheme
           initialDelaySeconds: {{ $readinessProbe.initialDelaySeconds | default 0 }}
           timeoutSeconds: {{ $readinessProbe.timeoutSeconds | default 10 }}
           periodSeconds: {{ $readinessProbe.periodSeconds | default 10 }}
@@ -214,7 +214,7 @@ spec:
           httpGet:
             path: "/{{ template "pega.applicationContextPath" . }}/PRRestService/monitor/pingService/ping"
             port: {{ $startupProbe.port | default 8080 }}
-            scheme: HTTP
+            scheme: $startupProbe.scheme
           initialDelaySeconds: {{ $startupProbe.initialDelaySeconds | default 10 }}
           timeoutSeconds: {{ $startupProbe.timeoutSeconds | default 10 }}
           periodSeconds: {{ $startupProbe.periodSeconds | default 10 }}
@@ -227,7 +227,7 @@ spec:
           httpGet:
             path: "/{{ template "pega.applicationContextPath" . }}/PRRestService/monitor/pingService/ping"
             port: {{ $livenessProbe.port | default 8080 }}
-            scheme: HTTP
+            scheme: $livenessProbe.scheme
           initialDelaySeconds: {{ $livenessProbe.initialDelaySeconds | default 200 }}
           timeoutSeconds: {{ $livenessProbe.timeoutSeconds | default 20 }}
           periodSeconds: {{ $livenessProbe.periodSeconds | default 30 }}
@@ -239,7 +239,7 @@ spec:
           httpGet:
             path: "/{{ template "pega.applicationContextPath" . }}/PRRestService/monitor/pingService/ping"
             port: {{ $readinessProbe.port | default 8080 }}
-            scheme: HTTP
+            scheme: $readinessProbe.scheme
           initialDelaySeconds: {{ $readinessProbe.initialDelaySeconds | default 30 }}
           timeoutSeconds: {{ $readinessProbe.timeoutSeconds | default 10 }}
           periodSeconds: {{ $readinessProbe.periodSeconds | default 10 }}
