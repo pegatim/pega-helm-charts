@@ -34,4 +34,3 @@ spec:
   {{- end }}
 ---
 {{- end }}
-{{- if (ne .root.Values.global.provider "openshift") }}
