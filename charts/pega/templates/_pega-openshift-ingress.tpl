@@ -19,15 +19,19 @@ spec:
     # Name of the service associated with the route
     name: {{ .name }}
   tls:
-    {{- if (eq .node.ingress.tls.termination "edge") }}
+  {{- if and (.node.ingress.tls.termination) }}
+    {{- if eq .node.ingress.tls.termination "edge" }}
     # Edge-terminated routes can specify an insecureEdgeTerminationPolicy that enables traffic on insecure schemes (HTTP) to be disabled, allowed or redirected.  (None/Allow/Redirect/EMPTY_VALUE)
     insecureEdgeTerminationPolicy: Redirect
     termination: edge
     {{- else }}
     termination: {{ .node.ingress.tls.termination }}
     {{- end }}
+  {{- else }}
     # Edge-terminated routes can specify an insecureEdgeTerminationPolicy that enables traffic on insecure schemes (HTTP) to be disabled, allowed or redirected.  (None/Allow/Redirect/EMPTY_VALUE)
     insecureEdgeTerminationPolicy: Redirect
     termination: edge
+  {{- end }}
 ---
 {{- end }}
+{{- if (ne .root.Values.global.provider "openshift") }}
