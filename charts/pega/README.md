@@ -137,6 +137,21 @@ docker:
     imagePullPolicy: "Always"
 ```
 
+## Deploying with Pega-provided busybox and k8s-wait-for utility images
+To deploy Pega Platform, the Pega helm chart requires the use of the busybox and k8s-wait-for images. For clients who want to pull these images from a registry other than Docker Hub, they must tag and push these images to another registry, and then pull these images by specifying `busybox` and `k8s-wait-for` values as described below.
+
+Example:
+
+ ```yaml
+utilityImages:
+  busybox:
+    image: "busybox:1.31.0"
+    imagePullPolicy: "IfNotPresent"
+  k8s_wait_for:
+    image: "dcasavant/k8s-wait-for"
+    imagePullPolicy: "IfNotPresent"
+```
+
 ## Deployment Name (Optional)
 
 Specify a deployment name that is used to differentiate this deployment in your environment. This name will be prepended to the various Pega tiers and the associated k8s objects in your deployment. Your deployment name should be constrained to lowercase alphanumeric and '-' characters.
@@ -392,7 +407,7 @@ You can optionally configure the resource allocation and limits for a tier using
 Parameter       | Description                                            | Default value
 ---             | ---                                                    | ---
 `replicas`      | Specify the number of Pods to deploy in the tier.      | `1`
-`cpuRequest`    | Initial CPU request for pods in the current tier.      | `2`
+`cpuRequest`    | Initial CPU request for pods in the current tier.      | `3`
 `cpuLimit`      | CPU limit for pods in the current tier.                | `4`
 `memRequest`    | Initial memory request for pods in the current tier.   | `12Gi`
 `memLimit`      | Memory limit for pods in the current tier.             | `12Gi`
@@ -474,7 +489,7 @@ Parameter           | Description    | Default value
 ---                 | ---       | ---
 `hpa.minReplicas`   | Minimum number of replicas that HPA can scale-down | `1` 
 `hpa.maxReplicas`   | Maximum number of replicas that HPA can scale-up  | `5`
-`hpa.targetAverageCPUValue` | Threshold value for scaling based on absolute CPU usage (The default value is `2.8` which represents 2.8 [Kubernetes CPU units](https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/#cpu-units)) | `2.8`
+`hpa.targetAverageCPUValue` | Threshold value for scaling based on absolute CPU usage (The default value is `2.55` which represents 2.55 [Kubernetes CPU units](https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/#cpu-units)) | `2.55`
 `hpa.targetAverageCPUUtilization` | Threshold value for scaling based on initial CPU request utilization (Can be set instead of `hpa.targetAverageCPUValue` to set the threshold as a percentage of the requested CPU) | 
 `hpa.targetAverageMemoryUtilization` | Threshold value for scaling based on initial memory utilization (The default value is `85` which corresponds to 85% of 12Gi ) | `85`
 `hpa.enableCpuTarget` | Set to true if you want to enable scaling based on CPU utilization or false if you want to disable it | true
@@ -527,6 +542,27 @@ tier:
   - name: my-tier
     custom:
       serviceAccountName: MY_SERVICE_ACCOUNT_NAME
+```
+
+### Sidecar Containers
+
+Pega supports adding sidecar containers to manage requirements for your Pega application services that live outside of the primary tomcat container. This may include company policy requirements, utility images, networking containers, or other examples. For an overview of the versatility sidecar containers present, see [How Pods manage multiple containers](https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers).
+
+You can specify custom `sidecarContainers` for your deployment tiers in the Pega Helm chart as shown in the example below. Each sidecar container definition must be a complete container definition, including a name, image, and resources.
+
+Example:
+
+```yaml
+tier:
+  - name: my-tier
+    custom:
+      sidecarContainers:
+        - name: SIDECAR_NAME
+          image: SIDECAR_IMAGE_URL
+          ...
+        - name: SIDECAR_NAME_2
+          image: SIDECAR_IMAGE_URL_2
+          ...
 ```
 
 ### Custom Annotations for Pods
@@ -606,6 +642,8 @@ dds:
 
 You may deploy a Cassandra instance along with Pega.  Cassandra is a separate technology and needs to be independently managed.  When deploying Cassandra, set `cassandra.enabled` to `true` and leave the `dds` section as-is.  For more information about configuring Cassandra, see the [Cassandra Helm charts](https://github.com/helm/charts/blob/master/incubator/cassandra/values.yaml).
 
+Pega does **not** actively update the Cassandra dependency in `requirements.yaml`. When deploying Cassandra with Pega, you should update its `version` value in `requirements.yaml`.
+
 #### Cassandra minimum resource requirements
 
 Deployment  | CPU     | Memory
@@ -638,8 +676,7 @@ dds:
 
 ## Search deployment
 
-Use the `pegasearch` section to configure a deployment of ElasticSearch for searching Rules and Work within Pega.  This deployment is used exclusively for Pega search, and is not the same ElasticSearch deployment used by the EFK stack or any other dedicated service such as Pega BI.
-
+Use the `pegasearch` section to configure the source ElasticSearch service that the Pega Platform deployment uses for searching Rules and Work within Pega. The ElasticSearch service defined here is not related to the ElasticSearch deployment if you also define an EFK stack for logging and monitoring in your Pega Platform deployment.
 ### For Pega Platform 8.6 and later:
 
 Pega recommends using the chart ['backingservices'](../backingservices) to enable Pega Infinity backing service and to deploy the latest generation of search and reporting capabilities to your Pega applications that run independently on nodes provisioned exclusively to run these services.
@@ -789,4 +826,16 @@ installer:
   podAnnotations:
     annotation-name1: annotation-value1
     annotation-name2: annotation-value2
+```
+### Mount the custom certificates into the Tomcat container
+
+Pega supports mounting and passing custom certificates into the tomcat container during your Pega Platform deployment. Pega supports the following certificate formats as long as they are encoded in base64: X.509 certificates such as PEM, DER, CER, CRT. To mount and pass the your custom certificates, use the `certificates` attributes as a map in the `values.yaml` file using the format in the following example.
+
+Example:
+
+```yaml
+certificates:
+    badssl.cer: |
+      "-----BEGIN CERTIFICATE-----\n<<certificate content>>\n-----END CERTIFICATE-----\n"
+
 ```
