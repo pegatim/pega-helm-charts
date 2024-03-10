@@ -125,7 +125,7 @@ global:
       # Create a an interactive tier for web users.  This tier uses
       # the WebUser node type and will be exposed via a service to
       # the load balancer.
-      nodeType: "WebUser,Search,Stream,BackgroundProcessing"
+      nodeType: "WebUser,Stream,BackgroundProcessing"
 
       # Pega requestor specific properties
       requestor:
@@ -225,12 +225,12 @@ global:
         port: 8081
 
       # Optionally overridde default resource specifications
-      cpuRequest: 4
-      memRequest: "16Gi"
-      cpuLimit: 4
-      memLimit: "16Gi"
-      initialHeap: "12000m"
-      maxHeap: "12000m"
+      cpuRequest: 2
+      memRequest: "12Gi"
+      cpuLimit: 2
+      memLimit: "12Gi"
+      initialHeap: "8196m"
+      maxHeap: "8196m"
 
       # To configure an alternative user for custom image, set value for runAsUser.
       # To configure an alternative group for volume mounts, set value for fsGroup
@@ -250,10 +250,154 @@ global:
         minAvailable: 1
         # maxUnavailable: "50%"
 
-      # volumeClaimTemplate:
-      #   resources:
-      #     requests:
-      #       storage: 10Gi
+      volumeClaimTemplate:
+        resources:
+          requests:
+            storage: 10Gi
+
+
+    - name: "embeddedsearch"
+      # Create a an interactive tier for web users.  This tier uses
+      # the WebUser node type and will be exposed via a service to
+      # the load balancer.
+      nodeType: "Search"
+
+      # Pega requestor specific properties
+      requestor:
+        # Inactivity time after which requestor is passivated
+        passivationTimeSec: 900
+
+      custom:
+        prconfig: |-
+          <?xml version="1.0" encoding="UTF-8"?>
+          <pegarules>
+            <!-- This is a minimum format prconfig.xml file.  Only the settings which are required to access settings in the database are included.
+            All other settings which were formerly located only in this file are now Data-Admin-System-Settings.      -->
+            <env name="initialization/settingsource" value="merged" />
+            <env name="database/databases/PegaRULES/dataSource" value="java:comp/env/jdbc/PegaRULES"/>
+            <env name="database/databases/PegaDATA/dataSource" value="java:comp/env/jdbc/PegaRULES"/>
+            <env name="security/urlaccesslog" value="NORMAL" />
+            <env name="security/urlaccessmode" value="WARN" />
+            <!-- Most nodes have a 'default' classification and for these nodes, no additional changes need to be made to this file.  However,
+            if this is node has a non-general purpose, for example: 'Agent', then the node classification setting should be added to this file. -->
+            <!--env name="initialization/nodeclassification" value="Agent" /  -->
+
+            <!-- Settings can still be put in this file.  If they are, then the value in this file will override the value in the database
+            for this node.  This is useful for settings which are specific to this node and should not be shared by multiple nodes on this
+            system. -->
+
+            <!-- Flag to notify that Hazelcast version 4 is enabled -->
+            <env name="cluster/hazelcast/v4/enabled" value="true" type="java.lang.String"/>
+            <env name="services/stream/provider" value="Internal" type="java.lang.String"/>
+          </pegarules>
+
+        volumes:
+        - name: search-index
+          persistentVolumeClaim:
+            claimName: search-index-pvc
+        volumeMounts:
+        - mountPath: "/search_index"
+          name: search-index
+
+      service:
+        # For help configuring the service block, see the Helm chart documentation
+        # https://github.com/pegasystems/pega-helm-charts/blob/master/charts/pega/README.md#service
+        httpEnabled: true
+        port: 80
+        targetPort: 8080
+        # To configure TLS between the ingress/load balancer and the backend, set the following:
+        tls:
+          enabled: false
+          # To avoid entering the certificate values in plain text, configure the keystore, keystorepassword, cacertificate parameter
+          # values in the External Secrets Manager, and enter the external secret name below
+          # make sure the keys in the secret should be TOMCAT_KEYSTORE_CONTENT, TOMCAT_KEYSTORE_PASSWORD and ca.crt respectively
+          external_secret_name: ""
+          keystore:
+          keystorepassword:
+          port: 443
+          targetPort: 8443
+          # set the value of CA certificate here in case of baremetal/openshift deployments - CA certificate should be in base64 format
+          # pass the certificateChainFile file if you are using certificateFile and certificateKeyFile
+          cacertificate:
+          # provide the SSL certificate and private key as a PEM format
+          certificateFile:
+          certificateKeyFile:
+          # if you will deploy traefik addon chart and enable traefik, set enabled=true; otherwise leave the default setting.
+          traefik:
+            enabled: false
+            # the SAN of the certificate present inside the container
+            serverName: ""
+            # set insecureSkipVerify=true, if the certificate verification has to be skipped
+            insecureSkipVerify: false
+
+      ingress:
+        # For help configuring the ingress block including TLS, see the Helm chart documentation
+        # https://github.com/pegasystems/pega-helm-charts/blob/master/charts/pega/README.md#ingress
+
+        # Enter the domain name to access web nodes via a load balancer.
+        #  e.g. web.mypega.example.com
+        domain: ""
+        # Configure custom path for given host along with pathType. Default pathType is ImplementationSpecific.
+        # path:
+        # pathType:
+        tls:
+          # Enable TLS encryption
+          enabled: false
+          # secretName:
+          # useManagedCertificate: false
+          # ssl_annotation:
+          # For Openshift, Pega deployments enable TLS to secure the connection
+          # from the browser to the router by creating the route using reencrypt termination policy.
+          # Add your certificate, the corresponding key using the appropriate .pem or .crt format and
+          # specify a CA certificate to validate the endpoint certificate.
+          certificate:
+          key:
+          cacertificate:
+
+      replicas: 1
+      javaOpts: ""
+      pegaDiagnosticUser: ""
+      pegaDiagnosticPassword: ""
+
+      # deploymentStrategy:
+      #   rollingUpdate:
+      #     maxSurge: 1
+      #     maxUnavailable: 0
+      #   type: RollingUpdate
+
+      livenessProbe:
+        port: 8081
+
+      # Optionally overridde default resource specifications
+      cpuRequest: 2
+      memRequest: "10Gi"
+      cpuLimit: 2
+      memLimit: "10Gi"
+      initialHeap: "8196m"
+      maxHeap: "8196m"
+
+      # To configure an alternative user for custom image, set value for runAsUser.
+      # To configure an alternative group for volume mounts, set value for fsGroup
+      # See, https://github.com/pegasystems/pega-helm-charts/blob/master/charts/pega/README.md#security-context
+      # securityContext:
+      #   runAsUser: 9001
+      #   fsGroup: 0
+
+      hpa:
+        enabled: false
+
+      # Set enabled to true to include a Pod Disruption Budget for this tier.
+      # To enable this budget, specifiy either a pdb.minAvailable or pdb.maxUnavailable
+      # value and comment out the other parameter.
+      pdb:
+        enabled: false
+        minAvailable: 1
+        # maxUnavailable: "50%"
+
+      volumeClaimTemplate:
+        resources:
+          requests:
+            storage: 5Gi
 
 # External services
 
@@ -339,13 +483,13 @@ dds:
 # These search nodes will be deployed regardless of the Elasticsearch configuration above.
 # Refer to README document to configure `Search and Reporting Service` as a search functionality provider under this section.
 pegasearch:
-        #externalSearchService: true
-        #externalURL: "http://testsrs.pega.svc.cluster.local"      
-  image: "pegatim/pegasearch:8.23.1"
-  memLimit: "3Gi"
-  replicas: 1
-  set_vm_max_map_count: false
-  set_data_owner_on_startup: false
+  externalSearchService: true
+  externalURL: ""
+  # image: "pegatim/pegasearch:8.23.1"
+  # memLimit: "3Gi"
+  # replicas: 1
+  # set_vm_max_map_count: false
+  # set_data_owner_on_startup: false
 
 # Pega Installer settings.
 installer:
@@ -380,7 +524,7 @@ hazelcast:
   enabled: false
 
   # Setting below to true will deploy Pega Platform using a client-server Hazelcast model for version 8.8 and later.
-  clusteringServiceEnabled: false
+  clusteringServiceEnabled: true
 
   # Setting related to Hazelcast migration.
   migration:
@@ -391,7 +535,7 @@ hazelcast:
     # Set to `true` when migrating from embedded Hazelcast.
     embeddedToCSMigration: false
 
-  # No. of initial members to join
+  # No. of initial members to joink g
   replicas: 1
   # UserName in the client-server Hazelcast model authentication. This setting is exposed and not secure.
   username: "pega"
